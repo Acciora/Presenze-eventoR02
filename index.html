@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b5e3b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone/icon-192.png">
+<link rel="apple-touch-icon" href="icone/icon-192.png">
+<title>Presenze FIRE</title>
+<style>
+  :root {
+    --verde: #1e7d34; --arancio: #d35400; --giallo: #f2b600; --rosso: #c62828;
+    --neutro: #455a64; --sfondo: #f4f6f5; --testo: #1b1f1d; --bordo: #cfd8d3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--sfondo); color: var(--testo);
+    display: flex; flex-direction: column; min-height: 100%;
+    -webkit-user-select: none; user-select: none;
+  }
+  header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    background: #1b5e3b; color: #fff;
+  }
+  header .titolo { font-weight: 700; font-size: 17px; }
+  header .stato { flex: 1; font-size: 13px; text-align: right; line-height: 1.25; }
+  header button { background: none; border: 0; color: #fff; font-size: 24px; width: 44px; height: 44px; }
+  .eventi { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; background: #fff; border-bottom: 1px solid var(--bordo); }
+  .eventi button {
+    flex: 1 1 30%; min-height: 46px; font-size: 15px; font-weight: 600;
+    border: 2px solid var(--c); background: #fff; color: var(--c); border-radius: 10px;
+  }
+  .eventi button.scelto { background: var(--c); color: #fff; }
+  .eventi .vuoto { font-size: 14px; color: var(--neutro); padding: 6px 2px; }
+  main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .camera { position: relative; flex: 1; min-height: 220px; background: #000; overflow: hidden; }
+  .camera video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mirino { position: absolute; inset: 18% 22%; border: 3px solid rgba(255,255,255,.75); border-radius: 14px; pointer-events: none; }
+  .avvio {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 10px; background: rgba(0,0,0,.72); color: #fff; text-align: center; padding: 16px;
+  }
+  .avvio button { font-size: 20px; font-weight: 700; padding: 16px 26px; border-radius: 12px; border: 0; background: #fff; color: #1b5e3b; }
+  .avvio p { margin: 0; font-size: 14px; max-width: 320px; }
+  .esito { min-height: 128px; padding: 12px 14px; color: #fff; background: var(--neutro); transition: background .15s; }
+  .esito.verde { background: var(--verde); } .esito.arancio { background: var(--arancio); }
+  .esito.giallo { background: var(--giallo); color: #1b1f1d; } .esito.rosso { background: var(--rosso); }
+  .esito.blu { background: #1565c0; }
+  .allarme { background: var(--rosso); color: #fff; padding: 8px 12px; font-size: 14px; font-weight: 600; }
+  .esito #esitoTitolo { font-size: 27px; font-weight: 800; line-height: 1.15; word-break: break-word; }
+  .esito #esitoDettaglio { font-size: 16px; margin-top: 6px; line-height: 1.3; }
+  .esito #esitoNota { font-size: 14px; margin-top: 4px; opacity: .95; }
+  footer {
+    display: flex; gap: 8px; padding: 8px 10px; padding-bottom: max(8px, env(safe-area-inset-bottom));
+    background: #fff; border-top: 1px solid var(--bordo);
+  }
+  footer button, .pannello button, .dialogo button {
+    flex: 1; min-height: 48px; font-size: 16px; font-weight: 600; border-radius: 10px;
+    border: 1px solid var(--bordo); background: #fff; color: var(--testo);
+  }
+  button.primario { background: #1b5e3b; color: #fff; border-color: #1b5e3b; }
+  button.pericolo { color: var(--rosso); border-color: var(--rosso); }
+  .pannello {
+    position: fixed; inset: 0; background: var(--sfondo); overflow-y: auto; z-index: 10;
+    padding: 12px; padding-top: max(12px, env(safe-area-inset-top));
+  }
+  .pannello h2 { margin: 6px 0 12px; font-size: 20px; }
+  .pannello h3 { margin: 18px 0 6px; font-size: 15px; color: var(--neutro); text-transform: uppercase; letter-spacing: .03em; }
+  .riquadro { background: #fff; border: 1px solid var(--bordo); border-radius: 10px; padding: 10px 12px; }
+  .riquadro p { margin: 4px 0; font-size: 15px; }
+  .riga { display: flex; gap: 8px; margin-top: 8px; }
+  .pannello input, .dialogo input {
+    width: 100%; font-size: 16px; padding: 10px; border: 1px solid var(--bordo); border-radius: 8px; margin-top: 4px;
+    -webkit-user-select: text; user-select: text;
+  }
+  .pannello label { font-size: 14px; color: var(--neutro); display: block; margin-top: 8px; }
+  .lista { font-size: 14px; }
+  .lista div { padding: 6px 0; border-bottom: 1px solid #e3e8e5; }
+  .lista .annullata { text-decoration: line-through; color: #8a948f; }
+  .piccolo { font-size: 13px; color: var(--neutro); }
+  .nascosto { display: none !important; }
+  .dialogo {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 20;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .dialogo .scatola { background: #fff; border-radius: 14px; padding: 16px; width: 100%; max-width: 420px; }
+  .dialogo p { font-size: 16px; margin: 0 0 10px; white-space: pre-line; }
+  .avviso {
+    position: fixed; left: 12px; right: 12px; bottom: 84px; z-index: 30; background: #263238; color: #fff;
+    padding: 12px 14px; border-radius: 10px; font-size: 15px; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="titolo">Presenze FIRE</div>
+    <div class="stato" id="stato">...</div>
+    <button id="btnImpostazioni" aria-label="Impostazioni">&#9881;</button>
+  </header>
+
+  <div class="allarme nascosto" id="allarme"></div>
+  <nav class="eventi" id="eventi"></nav>
+
+  <main>
+    <div class="camera">
+      <video id="video" playsinline muted></video>
+      <div class="mirino"></div>
+      <div class="avvio" id="avvio">
+        <button id="btnAvvia">Tocca per iniziare</button>
+        <p id="avvioMsg">Attiva fotocamera e suoni.</p>
+      </div>
+    </div>
+    <section class="esito" id="esito">
+      <div id="esitoTitolo">Pronto</div>
+      <div id="esitoDettaglio">Scegli l'evento e inquadra un QR.</div>
+      <div id="esitoNota"></div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="btnAnnulla">Annulla ultima</button>
+    <button id="btnInvia" class="primario">Invia</button>
+  </footer>
+
+  <div class="pannello nascosto" id="pannello">
+    <div class="riga" style="margin-top:0">
+      <h2 style="flex:1">Impostazioni</h2>
+      <button id="btnChiudi" style="flex:0 0 110px">Chiudi</button>
+    </div>
+
+    <h3>Questo telefono</h3>
+    <div class="riquadro">
+      <label for="inDispositivo">Nome del telefono (es. Ingresso 1)</label>
+      <input id="inDispositivo" maxlength="40">
+      <div class="riga"><button id="btnSalvaDispositivo">Salva nome</button></div>
+    </div>
+
+    <h3>Elenco</h3>
+    <div class="riquadro">
+      <p id="infoElenco"></p>
+      <div class="riga"><button id="btnAggiornaElenco" class="primario">Aggiorna elenco</button></div>
+    </div>
+
+    <h3>Scansioni</h3>
+    <div class="riquadro">
+      <p id="infoScansioni"></p>
+      <div class="riga"><button id="btnInviaFile" class="primario">Invia file (email, WhatsApp...)</button></div>
+      <div class="riga"><button id="btnEsporta">Salva file nel telefono</button></div>
+      <div class="lista" id="ultime" style="margin-top:8px"></div>
+    </div>
+
+    <h3>Collegamento</h3>
+    <div class="riquadro">
+      <p id="infoServer"></p>
+      <p class="piccolo">Per collegare il telefono (o passare a un altro foglio) basta inquadrare con l'app il QR
+        di configurazione: nel foglio Google, menu Presenze &gt; Mostra link di configurazione.
+        In alternativa inserisci qui indirizzo e chiave.</p>
+      <label for="inUrl">Indirizzo script (/exec)</label>
+      <input id="inUrl" autocomplete="off" spellcheck="false">
+      <label for="inChiave">Chiave</label>
+      <input id="inChiave" autocomplete="off" spellcheck="false">
+      <div class="riga"><button id="btnSalvaServer">Salva collegamento</button></div>
+    </div>
+
+    <h3>Pulizia</h3>
+    <div class="riquadro">
+      <p class="piccolo">Cancella elenco e scansioni dal telefono (solo se tutto e' gia' stato inviato).</p>
+      <div class="riga"><button id="btnCancella" class="pericolo">Cancella dati del telefono</button></div>
+    </div>
+    <p class="piccolo" id="versione" style="margin-top:16px"></p>
+  </div>
+
+  <div class="dialogo nascosto" id="dialogo">
+    <div class="scatola">
+      <p id="dialogoTesto"></p>
+      <input id="dialogoInput" class="nascosto">
+      <div class="riga">
+        <button id="dialogoNo">Annulla</button>
+        <button id="dialogoSi" class="primario">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="avviso nascosto" id="avviso"></div>
+  <canvas id="tela" hidden></canvas>
+
+  <script src="jsQR.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
